@@ -1,3 +1,24 @@
+## git协作规范
+对于每个团队成员
+1. 将本仓库fork到你的github账户下
+2. 将你账户中fork过来的仓库clone到你的本地计算机中
+3. 设置仓库的upstream
+```bash
+git remote add upstream https://github.com/Homebrew-Blockchain-Club/minichain.git
+```
+4. 新建分支，名为dev
+```bash
+git branch dev
+git checkout dev
+```
+5. 上游有新更新时与上游主干同步
+```bash
+git checkout main
+git pull upstream main
+git checkout dev
+git merge main
+```
+6. 完成一次版本更迭，先提交到自己的仓库，再发起pull request
 ## package规范
 1. 应当放在internal文件夹中
 2. 每个package独占一个文件夹
