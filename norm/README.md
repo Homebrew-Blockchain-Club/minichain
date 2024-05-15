@@ -58,7 +58,7 @@ type Pet struct {
   Species string
 }
 ```
-注释文档符合Markdown格式，其应刚好位于被注释内容的上一行，效果如下：![效果](https://substackcdn.com/image/fetch/f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F6bfcb077-75b7-4fe9-ac2c-f4e49402e229_700x900.png)
+注释文档符合Markdown格式，其应刚好位于被注释内容的上一行，效果如下：![效果](https://substackcdn.com/image/fetch/f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F6bfcb077-75b7-4fe9-ac2c-f4e49402e229_700x900.png)  
 3. 函数应使用驼峰命名法，语言是英语，对于对外的接口，则需要首字母大写。
 ## 测试规范
 1. 应当放在testing文件夹中
