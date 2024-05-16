@@ -20,10 +20,9 @@ git merge main
 ```
 6. 完成一次版本更迭，先提交到自己的仓库，再发起pull request
 ## package规范
-1. 应当放在internal文件夹中
-2. 每个package独占一个文件夹
-3. package应当按照明确区分的功能命名，避免如controller、models这样的扁平命名，而是如user、auth、crypto等明确的功能区分。
-4. 同一包内不同方面的功能应拆分到不同的文件内，假如存在一个package user，其功能主要是进行用户登录、注册等操作，应当将其对应实现拆分为login.go、register.go而非合为user.go
+1. main.go直接在根目录下，而其依赖的每个package独占一个文件夹
+4. package应当按照明确区分的功能命名，避免如controller、models这样的扁平命名，而是如user、auth、crypto等明确的功能区分。
+5. 同一包内不同方面的功能应拆分到不同的文件内，假如存在一个package user，其功能主要是进行用户登录、注册等操作，应当将其对应实现拆分为login.go、register.go而非合为user.go
 ## 分组编码规范
 1. 组内不同的人会负责不同的package，请不要更改他人的package，这样可以避免合并冲突 
 2. 如果需要自己依赖而另一人尚未完成的函数，应当按照如下的方式实现一个伪函数，从而实现小组内工作的并行，且方便每个人各自的单元测试，样例如下：
@@ -58,11 +57,15 @@ type Pet struct {
   Species string
 }
 ```
-注释文档符合Markdown格式，其应刚好位于被注释内容的上一行，效果如下：![效果](https://substackcdn.com/image/fetch/f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F6bfcb077-75b7-4fe9-ac2c-f4e49402e229_700x900.png)  
+pkgsite注释文档符合Markdown格式，其应刚好位于被注释内容的上一行，效果如下：![效果](https://substackcdn.com/image/fetch/f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F6bfcb077-75b7-4fe9-ac2c-f4e49402e229_700x900.png)  
+3. 当你需要本项目其对应的网页文档时，请先下载pkgsite，然后用pkgsite打开本项目，即可看到由注释自动生成的文档了。
+```bash
+go install pkgsite
+pkgsite -open .
+```
 3. 函数应使用驼峰命名法，语言是英语，对于对外的接口，则需要首字母大写。
 ## 测试规范
-1. 应当放在testing文件夹中
-2. 对于每个package，只有一个测试用的代码，格式如下：
+1. testing文件夹应当放在对应的package中，格式如下：
 ```go
 // In file my_package_test.go
 package test
