@@ -1,0 +1,3 @@
+package minichain
+
+func main() {}
