@@ -7,10 +7,6 @@ import "github.com/Homebrew-Blockchain-Club/minichain/entity"
 type CLI struct {
 }
 
-func NewCLI() *CLI {
-	return nil
-}
-
 // 根据账户地址返回账户信息 若不存在则返回nil
 func (*CLI) QueryAccount([]byte) *entity.Account {
 	return nil
@@ -24,4 +20,8 @@ func (*CLI) NewTransaction(privkey []byte, to []byte, amount []byte, data []byte
 // 创建新的公私钥对
 func (*CLI) NewAccount() ([]byte, []byte) {
 	return nil, nil
+}
+
+func main() {
+
 }
