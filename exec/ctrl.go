@@ -10,6 +10,10 @@ import (
 type Controller struct {
 }
 
+func NewController() *Controller {
+	return nil
+}
+
 // 加入新交易。在交易池未满时放入交易池，交易池已满则进行挖矿，挖矿完成则将新区块返回到Communicator来发布
 func (*Controller) AddTransaction(entity.Transaction) {
 
