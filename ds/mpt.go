@@ -3,13 +3,13 @@ package ds
 type MPT struct {
 }
 
-// 创建新的MPT根节点 用于交易树和收据树
-func NewRoot() *MPT {
+// 创建新的MPT 用于交易树和收据树
+func NewMPT() *MPT {
 	return nil
 }
 
-// 创建新的MPT根节点，用于状态树
-func NewStateRoot(*Block) {}
+// 创建新的MPT，用于状态树
+func NewStateMPT(*Block) *MPT {}
 
 // 将本树持久化
 func (tr *MPT) Commit() {}
