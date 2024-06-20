@@ -8,10 +8,10 @@ const DIFFICULTY = 5
 
 var top []byte
 
-func GetTop() []byte {
+func GetTop() *Block {
 	return nil
 }
-func SetTop([]byte) {
+func SetTop(*Block) {
 
 }
 
