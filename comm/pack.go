@@ -7,5 +7,5 @@ type Package struct {
 	Data []byte
 	//包所附带的公钥 用此公钥来解锁这个包
 	//并且这个公钥同时也是发送方的地址
-	Pubkey []byte
+
 }

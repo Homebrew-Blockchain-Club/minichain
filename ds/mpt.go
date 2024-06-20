@@ -1,15 +1,19 @@
 package ds
 
+type node interface{}
 type MPT struct {
+	root *node
 }
 
 // 创建新的MPT 用于交易树和收据树
 func NewMPT() *MPT {
-	return nil
+	return &MPT{
+		root: nil,
+	}
 }
 
 // 创建新的MPT，用于状态树
-func NewStateMPT(*Block) *MPT {}
+func NewStateMPT(*Block) *MPT { return nil }
 
 // 将本树持久化
 func (tr *MPT) Commit() {}
