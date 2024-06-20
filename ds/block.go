@@ -6,7 +6,14 @@ import (
 
 const DIFFICULTY = 5
 
-var Tail []byte
+var top []byte
+
+func GetTop() []byte {
+	return nil
+}
+func SetTop([]byte) {
+
+}
 
 type BlockHeader struct {
 	Nonce           uint64
