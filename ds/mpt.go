@@ -19,7 +19,7 @@ func NewStateMPT(*Block) *MPT { return nil }
 func (tr *MPT) Commit() {}
 
 // 向对应的MPT存储键值对。若不存在则会创建新的，若存在则会覆盖原数据
-func (tr *MPT) Store(key, val []byte) {
+func (tr *MPT) Update(key, val []byte) {
 
 }
 
