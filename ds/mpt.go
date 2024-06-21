@@ -163,8 +163,11 @@ func prefixLen(a, b []byte) int {
 	return i
 }
 func (tr *MPT) update(cur node, prefix, key []byte, val node) (bool, node) {
+	if cur != nil {
+		cur.setDirty()
+	}
 	if len(key) == 0 {
-		if bytes.Equal(val.(*valueNode).Val, cur.(*valueNode).Val) {
+		if v, ok := cur.(*valueNode); ok && bytes.Equal(val.(*valueNode).Val, v.Val) {
 			//cur.(*valueNode).Dirty = true
 
 			return false, cur
@@ -174,9 +177,7 @@ func (tr *MPT) update(cur node, prefix, key []byte, val node) (bool, node) {
 			return true, cur
 		}
 	}
-	if cur != nil {
-		cur.setDirty()
-	}
+
 	switch cur := cur.(type) {
 	case *shortNode:
 		matchlen := prefixLen(key, cur.Key)
