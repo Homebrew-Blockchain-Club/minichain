@@ -5,6 +5,7 @@ package comm
 
 import (
 	"container/list"
+	"log"
 	"sync"
 
 	"github.com/Homebrew-Blockchain-Club/minichain/ds"
@@ -15,15 +16,45 @@ import (
 )
 
 type Communicator struct {
-	r *gin.Engine
+	r    *gin.Engine
+	ctrl exec.AbstractController
+}
+
+const CONTROLLER_UNIMPLEMENTED = true
+
+type MockController struct {
+	Transactions []entity.Transaction
+	Blocks       []ds.Block
+}
+
+func (m *MockController) AddTransaction(tx entity.Transaction) {
+	m.Transactions = append(m.Transactions, tx)
+	log.Println("Mock AddTransaction called with:", tx)
+}
+
+func (m *MockController) AddBlock(block ds.Block) {
+	m.Blocks = append(m.Blocks, block)
+	log.Println("Mock AddBlock called with:", block)
+}
+
+func (m *MockController) QueryAccount() entity.Account {
+	return entity.Account{}
 }
 
 // 创建新的交流器
 // 创建一个gin的goroutine以接收http请求、绑定本包的函数调用
 func NewCommunicator() Communicator {
 	r := gin.Default()
-	comm := Communicator{r: r}
-
+	var ctrl exec.AbstractController
+	if !CONTROLLER_UNIMPLEMENTED {
+		ctrl = exec.NewController()
+	} else {
+		ctrl = &MockController{}
+	}
+	comm := Communicator{
+		r:    r,
+		ctrl: ctrl,
+	}
 	// 设置路由
 	r.POST("/receive", func(c *gin.Context) {
 		var pkg Package
@@ -31,7 +62,7 @@ func NewCommunicator() Communicator {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
-		comm.Receive(pkg, &exec.Controller{})
+		comm.Receive(pkg)
 		c.JSON(200, gin.H{"status": "received"})
 	})
 
@@ -60,7 +91,7 @@ var Receivequeue list.List
 
 // 接收包
 // 此函数要使用mutex锁
-func (*Communicator) Receive(p Package, controller exec.AbstractController) {
+func (comm *Communicator) Receive(p Package) {
 	// 将请求放入队列
 	Receivequeue.PushBack(&p)
 	ReceiveMutex.Lock()
@@ -77,11 +108,11 @@ func (*Communicator) Receive(p Package, controller exec.AbstractController) {
 		var transaction entity.Transaction
 		transaction = typeconv.FromBytes[entity.Transaction](pkg.Data)
 
-		controller.AddTransaction(transaction)
+		comm.ctrl.AddTransaction(transaction)
 	case "block":
 		var block ds.Block
 		block = typeconv.FromBytes[ds.Block](pkg.Data)
-		controller.AddBlock(block)
+		comm.ctrl.AddBlock(block)
 	}
 
 }
