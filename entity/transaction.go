@@ -1,8 +1,6 @@
 package entity
 
 import (
-	"math/big"
-
 	"github.com/Homebrew-Blockchain-Club/minichain/hasher"
 	"github.com/Homebrew-Blockchain-Club/minichain/typeconv"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -15,7 +13,7 @@ type Transaction struct {
 	To       []byte
 	Amount   uint64
 	Data     []byte
-	R, S, V  *big.Int
+	R, S, V  []byte
 }
 
 func Verify(tx Transaction) bool {
@@ -27,8 +25,8 @@ func Verify(tx Transaction) bool {
 	tx.V = nil
 	raw := typeconv.ToBytes(tx)
 	hash := hasher.Hash(raw)
-	sig := append(r.Bytes(), s.Bytes()...)
-	sig = append(sig, byte(v.Uint64()-27))
+	sig := append(r, s...)
+	sig = append(sig, v...)
 	pubkey, _ := crypto.SigToPub(hash, sig)
 	addr := crypto.PubkeyToAddress(*pubkey)
 	for pos, x := range addr.Bytes() {
@@ -43,9 +41,10 @@ func Sign(tx *Transaction, privateKey []byte) {
 	txbyte := typeconv.ToBytes(*tx)
 	hash := hasher.Hash(txbyte)
 	sign, _ := crypto.Sign(hash, key)
-	r := new(big.Int).SetBytes(sign[:32])
-	s := new(big.Int).SetBytes(sign[32:64])
-	v := big.NewInt(int64(sign[64] + 27))
+	//r := new(big.Int).SetBytes(sign[:32])
+	r := sign[:32]
+	s := sign[32:64]
+	v := sign[64:]
 	tx.R = r
 	tx.S = s
 	tx.V = v

@@ -36,3 +36,21 @@ func TestTypeConvStructPointer(t *testing.T) {
 	a = typeconv.FromBytes[tmp](c)
 	fmt.Printf("%v", *a.A)
 }
+
+func TestTypeConvSlice(t *testing.T) {
+	b := typeconv.ToBytes("114514")
+	a := typeconv.FromBytes[string](b)
+	println(a)
+}
+
+func TestInterface(t *testing.T) {
+	type y struct {
+		A int
+	}
+	a := y{
+		A: 1,
+	}
+	b := typeconv.ToBytes(a)
+	a = typeconv.FromBytes[any](b).(y)
+	println(a.A)
+}

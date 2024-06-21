@@ -89,6 +89,10 @@ func (*Communicator) Send(Package) {
 var ReceiveMutex sync.Mutex
 var Receivequeue list.List
 
+func (comm *Communicator) Query(p Package) {
+
+}
+
 // 接收包
 // 此函数要使用mutex锁
 func (comm *Communicator) Receive(p Package) {
@@ -107,20 +111,11 @@ func (comm *Communicator) Receive(p Package) {
 	case "transaction":
 		var transaction entity.Transaction
 		transaction = typeconv.FromBytes[entity.Transaction](pkg.Data)
-
 		comm.ctrl.AddTransaction(transaction)
 	case "block":
 		var block ds.Block
 		block = typeconv.FromBytes[ds.Block](pkg.Data)
 		comm.ctrl.AddBlock(block)
 	}
-
-}
-
-// 假如本包是一个交易包，应当进行的操作
-func TransactionReceived(Package) {}
-
-// 假如本包是一个区块包，应当进行的操作
-func BlockReceived(Package) {
 
 }
