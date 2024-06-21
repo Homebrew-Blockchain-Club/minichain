@@ -1,7 +1,6 @@
 package entity
 
 import (
-	"crypto/ecdsa"
 	"math/big"
 
 	"github.com/Homebrew-Blockchain-Club/minichain/hasher"
@@ -40,10 +39,10 @@ func Verify(tx Transaction) bool {
 	return true
 }
 func Sign(tx *Transaction, privateKey []byte) {
-	key := typeconv.FromBytes[ecdsa.PrivateKey](privateKey)
+	key, _ := crypto.ToECDSA(privateKey)
 	txbyte := typeconv.ToBytes(*tx)
 	hash := hasher.Hash(txbyte)
-	sign, _ := crypto.Sign(hash, &key)
+	sign, _ := crypto.Sign(hash, key)
 	r := new(big.Int).SetBytes(sign[:32])
 	s := new(big.Int).SetBytes(sign[32:64])
 	v := big.NewInt(int64(sign[64] + 27))
