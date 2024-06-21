@@ -34,6 +34,7 @@ type BlockHeader struct {
 	StateRoot       []byte
 	TransactionRoot []byte
 	RecipientRoot   []byte
+	Miner []byte
 }
 type Block struct {
 	Header       BlockHeader
