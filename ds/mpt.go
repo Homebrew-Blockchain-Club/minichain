@@ -139,6 +139,9 @@ func (tr *MPT) commit(cur node, key []byte) {
 		storage.Store([]byte(hash(cur, string(key))), typeconv.ToBytes(cur))
 		storage.Store([]byte(hash(cur, string(key)+"type")), []byte("F"))
 		for s, nxt := range cur.Children {
+			if nxt == "" {
+				continue
+			}
 			tr.commit(getNode(nxt), append(key, byte(s)))
 		}
 	case *shortNode:
@@ -152,7 +155,9 @@ func (tr *MPT) commit(cur node, key []byte) {
 }
 
 // 将本树持久化
-func (tr *MPT) Commit() {}
+func (tr *MPT) Commit() {
+	tr.commit(getNode(tr.Root), []byte{})
+}
 func prefixLen(a, b []byte) int {
 	i, len := 0, min(len(a), len(b))
 	for ; i < len; i++ {
