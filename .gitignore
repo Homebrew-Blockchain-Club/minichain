@@ -7,7 +7,7 @@
 *.dll
 *.so
 *.dylib
-
+**/minichain.db/
 # Test binary, built with `go test -c`
 *.test
 
