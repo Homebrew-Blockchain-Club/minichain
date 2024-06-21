@@ -18,3 +18,7 @@ func (*TxPool) Poll() entity.Transaction {
 func (*TxPool) Length() int {
 	return 0
 }
+
+func (*TxPool) IsFull() bool{
+	return false
+} 
