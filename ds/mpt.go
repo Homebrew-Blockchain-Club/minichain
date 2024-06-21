@@ -14,7 +14,7 @@ type node interface {
 }
 
 // 将[]byte转为string后取得
-var nodeCache map[string]node
+var nodeCache map[string]node = make(map[string]node)
 
 // 被保存了的节点必然为被哈希的节点
 type (
@@ -209,13 +209,13 @@ func (tr *MPT) update(cur node, prefix, key []byte, val node) (bool, node) {
 			_, child := tr.update(nil, nprefix, key[matchlen+1:], val)
 			branch.Children[key[matchlen]] = hash(child, string(nprefix))
 		}
-		branchHash := hash(branch, string(prefix))
+		branchHash := hash(branch, string(append(prefix, key[:matchlen]...)))
 		setNode(branchHash, branch)
 		if matchlen == 0 {
 			return true, branch
 		}
 		link := &shortNode{key[:matchlen], branchHash, false}
-		setNode(hash(link, string(append(prefix, key[:matchlen]...))), link)
+		setNode(hash(link, string(prefix)), link)
 		return true, link
 	case *fullNode:
 		nprefix := append(prefix, key[0])
@@ -284,6 +284,9 @@ func (tr *MPT) proof(cur node, prefix []byte) bool {
 		return getNode(hash(cur, string(prefix))) == cur
 	case *fullNode:
 		for s, ele := range cur.Children {
+			if ele == "" {
+				continue
+			}
 			if !tr.proof(getNode(ele), append(prefix, byte(s))) {
 				return false
 			}
