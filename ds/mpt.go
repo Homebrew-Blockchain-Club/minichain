@@ -67,8 +67,8 @@ func getNode(hash string) node {
 	if ret != nil {
 		return ret
 	}
-	if nodebyte := storage.Query(typeconv.ToBytes(hash)); nodebyte != nil {
-		typebyte := storage.Query(typeconv.ToBytes(hash + "type"))
+	if nodebyte := storage.Query([]byte(hash)); nodebyte != nil {
+		typebyte := storage.Query([]byte(hash + "type"))
 		switch string(typebyte) {
 		case "F":
 			cur := typeconv.FromBytes[fullNode](nodebyte)
@@ -155,8 +155,11 @@ func (tr *MPT) commit(cur node, key []byte) {
 }
 
 // 将本树持久化
-func (tr *MPT) Commit() {
+func (tr *MPT) Commit() []byte {
 	tr.commit(getNode(tr.Root), []byte{})
+	byte := typeconv.ToBytes(*tr)
+	storage.Store(hasher.Hash(byte), byte)
+	return byte
 }
 func prefixLen(a, b []byte) int {
 	i, len := 0, min(len(a), len(b))
