@@ -36,7 +36,7 @@ func (c *Controller) AddTransaction(tx entity.Transaction) ds.Block {
 // 验证流程：1.满足PoW约束 2.MPT证明通过
 func (*Controller) AddBlock(block ds.Block) bool {
 	if check(hash.Sha3Slice256(typeconv.ToBytes(block.Header)), 5) {
-		if MPTverify {
+		if proof() {
 			ds.SetTop(&block)
 			return true
 		}
