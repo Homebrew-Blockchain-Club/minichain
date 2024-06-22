@@ -8,6 +8,7 @@ import (
 
 type Transaction struct {
 	Nonce    uint64
+	Gas      uint64
 	GasLimit uint64
 	From     []byte
 	To       []byte
