@@ -16,6 +16,3 @@ type AbstractController interface {
 	AddBlock(ds.Block)
 	QueryAccount([]byte) entity.Account
 }
-type AbstractVM interface {
-	run(account []byte, code []byte, gaslimit uint64, stateroot []byte) []byte
-}
