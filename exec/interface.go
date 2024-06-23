@@ -9,6 +9,7 @@ type AbstractTxPool interface {
 	Insert(entity.Transaction)
 	Poll() entity.Transaction
 	Length() int
+	IsFull() bool
 }
 type AbstractController interface {
 	AddTransaction(entity.Transaction)
