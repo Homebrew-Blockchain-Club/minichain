@@ -16,8 +16,8 @@ import (
 )
 
 type Communicator struct {
-	r    *gin.Engine
-	ctrl exec.AbstractController
+	Router *gin.Engine
+	ctrl   exec.AbstractController
 }
 
 const CONTROLLER_UNIMPLEMENTED = true
@@ -44,7 +44,7 @@ func (m *MockController) QueryAccount([]byte) entity.Account {
 // 创建新的交流器
 // 创建一个gin的goroutine以接收http请求、绑定本包的函数调用
 func NewCommunicator() Communicator {
-	r := gin.Default()
+	Router := gin.Default()
 	var ctrl exec.AbstractController
 	if !CONTROLLER_UNIMPLEMENTED {
 		ctrl = exec.NewController()
@@ -52,11 +52,11 @@ func NewCommunicator() Communicator {
 		ctrl = &MockController{}
 	}
 	comm := Communicator{
-		r:    r,
-		ctrl: ctrl,
+		Router: Router,
+		ctrl:   ctrl,
 	}
 	// 设置路由
-	r.POST("/receive", func(c *gin.Context) {
+	Router.POST("/receive", func(c *gin.Context) {
 		var pkg Package
 		if err := c.ShouldBindJSON(&pkg); err != nil {
 			c.JSON(400, gin.H{"error": err.Error()})
@@ -66,9 +66,18 @@ func NewCommunicator() Communicator {
 		c.JSON(200, gin.H{"status": "received"})
 	})
 
+	Router.POST("/query", func(c *gin.Context) {
+		var address []byte
+		if err := c.ShouldBindJSON(&address); err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+		acc := comm.Query(address)
+		c.JSON(200, acc)
+	})
 	// 启动 HTTP 服务
 	go func() {
-		if err := r.Run(); err != nil {
+		if err := Router.Run(); err != nil {
 			panic(err)
 		}
 	}()
@@ -89,8 +98,8 @@ func (*Communicator) Send(Package) {
 var ReceiveMutex sync.Mutex
 var Receivequeue list.List
 
-func (comm *Communicator) Query(p Package) {
-
+func (comm *Communicator) Query(address []byte) entity.Account {
+	return comm.ctrl.QueryAccount(address)
 }
 
 // 接收包
