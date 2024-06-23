@@ -13,7 +13,7 @@ type AbstractTxPool interface {
 type AbstractController interface {
 	AddTransaction(entity.Transaction)
 	AddBlock(ds.Block)
-	QueryAccount() entity.Account
+	QueryAccount([]byte) entity.Account
 }
 type AbstractVM interface {
 	run(account []byte, code []byte, gaslimit uint64, stateroot []byte) []byte
