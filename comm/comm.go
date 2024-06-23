@@ -37,7 +37,7 @@ func (m *MockController) AddBlock(block ds.Block) {
 	log.Println("Mock AddBlock called with:", block)
 }
 
-func (m *MockController) QueryAccount() entity.Account {
+func (m *MockController) QueryAccount([]byte) entity.Account {
 	return entity.Account{}
 }
 
