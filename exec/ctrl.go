@@ -20,7 +20,7 @@ func NewController() *Controller {
 
 // 加入新交易。在交易池未满时放入交易池，交易池已满则进行挖矿，挖矿完成则将新区块返回到Communicator来发布
 func (c *Controller) AddTransaction(tx entity.Transaction) (ds.Block, bool) { //满了的话返回true，并返回区块，没满则返回空区块，和false
-	if c.pool.isPoolFull() {
+	if c.pool.isFull() {
 		var tx []entity.Transaction //交易从何而来？
 		for c.pool.Length() != 0 {
 			tx = append(tx, c.pool.Poll()) //交易从pool弹出来
