@@ -42,6 +42,21 @@ func pseudoHisFunc() T{
 ...
 }
 ```
+3. 对于结构体的情况，interface.go提供了Abstract接口，就以如下方式实现一个mock结构体，样例如下：
+```go
+package my_package
+import his_package
+const HIS_PACKAGE_HISFUNC_UNIMPLEMENTED=true
+func MyFunc(){
+    var a AbstractHisStruct
+    if HIS_PACKAGE_HISFUNC_UNIMPLEMENTED{
+        a=NewMockHisStruct()
+    }else{
+        a=NewHisStruct()
+    }
+    a.DoSomething()
+}
+```
 当你的函数经过了充分的测试，证明其本身工作没有问题、且其他人的工作也已经完成时，将HIS_PACKAGE_HISFUNC_UNIMPLEMENTED设为false以实现对接
 ## 代码文件规范
 1. 代码文件使用蛇形命名法，如source_code.go
