@@ -26,6 +26,13 @@ func FromBytes[T any](data []byte) T {
 	return ret
 }
 
+// 从字节数组解码到给定变量
+func FromBytesInto(data []byte, v any) {
+	buf := bytes.NewBuffer(data)
+	dec := gob.NewDecoder(buf)
+	dec.Decode(v)
+}
+
 func ToHex(bytes []byte) []byte {
 	result := make([]byte, len(bytes)*2)
 
