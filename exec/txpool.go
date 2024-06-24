@@ -72,30 +72,22 @@ func (pool *DefualtTxPool) Insert(tx entity.Transaction) {
 	if pool.Pendings == nil {
 		pool.Pendings = make(map[string]RowBlks)
 	}
-	if len(rowBlks) == 0 {
-		newRowBlk := make(RowBlks, 0)
-		pool.Pendings[address] = newRowBlk
-	}
 
 	// Trying to insert the transaction into the pending list
-
 	if tx.Nonce == account.Nonce+1 || VerifyNonce(pool.GetPendingLastNonce(address), tx.Nonce) {
 
 		if len(rowBlks) == 0 {
 			pool.CreateBlk(tx, address)
 		} else {
-			isInsert := false
-			for i := len(rowBlks) - 1; i >= 0; i-- {
+			for i := len(rowBlks) - 1; i >= len(rowBlks)-1; i-- {
 				if rowBlks[i].GasPrice == tx.Gas && VerifyNonce(pool.GetPendingLastNonce(address), tx.Nonce) {
 					pool.Pendings[address][i].Txs = append(pool.Pendings[address][i].Txs, tx)
-					pool.PollFromQueue(tx, address)
-					isInsert = true
+				} else {
+					pool.CreateBlk(tx, address)
 				}
 			}
-			if !isInsert {
-				pool.CreateBlk(tx, address)
-			}
 		}
+		pool.PollFromQueue(tx, address)
 
 	} else if tx.Nonce > pool.GetPendingLastNonce(address)+1 {
 		// If the nonce is out of order, add it to the queue
@@ -104,7 +96,7 @@ func (pool *DefualtTxPool) Insert(tx entity.Transaction) {
 			pool.Queues = make(map[string]Txs)
 			queueTxs = pool.Queues[address]
 		}
-		queueTxs = append(queueTxs, tx)
+		pool.Queues[address] = append(pool.Queues[address], tx)
 		sort.Sort(queueTxs)
 	} else if tx.Nonce <= pool.GetPendingLastNonce(address) {
 		// If the nonce is less than the last nonce, ignore it
@@ -152,7 +144,7 @@ func (pool *DefualtTxPool) AllSortedByGas() {
 	}
 
 	// Insert into miniPool
-
+	pool.MiniPool = make(Txs, 0)
 	for i := 0; i < min(MAX_POOL_SIZE, len(allTx)); i++ {
 		pool.MiniPool = append(pool.MiniPool, allTx[i])
 	}
@@ -195,9 +187,9 @@ func (pool *DefualtTxPool) PollFromQueue(tx entity.Transaction, address string) 
 
 func (pool *DefualtTxPool) PollFromQueueInsert(tx entity.Transaction, address string) {
 	rowBlks := pool.Pendings[address]
-	for i := len(rowBlks) - 1; i >= 0; i-- {
+	for i := len(rowBlks) - 1; i >= len(rowBlks)-1; i-- {
 		if rowBlks[i].GasPrice == tx.Gas && VerifyNonce(pool.GetPendingLastNonce(address), tx.Nonce) {
-			rowBlks[i].Txs = append(rowBlks[i].Txs, tx)
+			pool.Pendings[address][i].Txs = append(pool.Pendings[address][i].Txs, tx)
 		} else {
 			pool.CreateBlk(tx, address)
 		}
@@ -206,11 +198,11 @@ func (pool *DefualtTxPool) PollFromQueueInsert(tx entity.Transaction, address st
 
 // DeleteFromPending Delete the transaction from the pending list
 func (pool *DefualtTxPool) DeleteFromPending(tx entity.Transaction) {
-	address := typeconv.FromBytes[string](tx.From) //TODO
+	address := common.BytesToAddress(tx.From).Hex()
 	rowBlks := pool.Pendings[address]
-	for i := 0; i < len(rowBlks); i++ {
+	for i := 0; i < len(rowBlks)-1; i++ {
 		if rowBlks[i].GasPrice == tx.Gas {
-			for j := 0; j < len(rowBlks[i].Txs); j++ {
+			for j := 0; j < len(rowBlks[i].Txs)-1; j++ {
 				if rowBlks[i].Txs[j].Nonce == tx.Nonce {
 					rowBlks[i].Txs = append(rowBlks[i].Txs[:j], rowBlks[i].Txs[j+1:]...)
 				}
