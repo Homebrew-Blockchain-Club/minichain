@@ -14,7 +14,7 @@ import (
 
 func TestVM(t *testing.T) {
 	mpt := ds.NewMPT()
-	code, err := os.ReadFile("test.wasm")
+	code, err := os.ReadFile("test2.wasm")
 	if err != nil {
 		fmt.Printf("%s", err.Error())
 		panic("read file failed")
