@@ -25,7 +25,7 @@ func TestVM(t *testing.T) {
 	mpt.Update([]byte{1, 1, 4, 5, 1, 4}, typeconv.ToBytes(account))
 	mpt.Commit()
 	vm := vm.NewVM()
-	vm.Run([]byte{1, 1, 4, 5, 1, 4}, hasher.Hash(typeconv.ToBytes(mpt)), 9, "Test", nil)
+	vm.Run([]byte{1, 1, 4, 5, 1, 4}, hasher.Hash(typeconv.ToBytes(mpt)), 0, 9, "Test", nil)
 }
 func TestVMOutOfGas(t *testing.T) {
 	mpt := ds.NewMPT()
@@ -40,5 +40,5 @@ func TestVMOutOfGas(t *testing.T) {
 	mpt.Update([]byte{1, 1, 4, 5, 1, 4}, typeconv.ToBytes(account))
 	mpt.Commit()
 	vm := vm.NewVM()
-	vm.Run([]byte{1, 1, 4, 5, 1, 4}, hasher.Hash(typeconv.ToBytes(mpt)), 7, "Test", nil)
+	vm.Run([]byte{1, 1, 4, 5, 1, 4}, hasher.Hash(typeconv.ToBytes(mpt)), 0, 7, "Test", nil)
 }

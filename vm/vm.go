@@ -44,7 +44,7 @@ func mkuintptr(arr [8]byte) uintptr {
 
 // TODO 区块链上下文如何引入
 // 用此解释器执行VM字节码，并给出执行的合约账户地址和gas上限
-func (vm *VM) Run(address []byte, stateroot []byte, gaslimit uint64, function string, argv []string) {
+func (vm *VM) Run(address []byte, stateroot []byte, gas, gaslimit uint64, function string, argv []string) {
 	cntch := make(chan uint64)
 	runch := make(chan C.struct_ResultString)
 	account := typeconv.FromBytes[entity.Account](ds.GetMPT(stateroot).Query(address))
