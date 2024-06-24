@@ -16,8 +16,8 @@ import (
 )
 
 type Communicator struct {
-	r    *gin.Engine
-	ctrl exec.AbstractController
+	Router *gin.Engine
+	ctrl   exec.AbstractController
 }
 
 const CONTROLLER_UNIMPLEMENTED = true
@@ -37,14 +37,14 @@ func (m *MockController) AddBlock(block ds.Block) {
 	log.Println("Mock AddBlock called with:", block)
 }
 
-func (m *MockController) QueryAccount() entity.Account {
+func (m *MockController) QueryAccount([]byte) entity.Account {
 	return entity.Account{}
 }
 
 // 创建新的交流器
 // 创建一个gin的goroutine以接收http请求、绑定本包的函数调用
 func NewCommunicator() Communicator {
-	r := gin.Default()
+	Router := gin.Default()
 	var ctrl exec.AbstractController
 	if !CONTROLLER_UNIMPLEMENTED {
 		ctrl = exec.NewController()
@@ -52,11 +52,11 @@ func NewCommunicator() Communicator {
 		ctrl = &MockController{}
 	}
 	comm := Communicator{
-		r:    r,
-		ctrl: ctrl,
+		Router: Router,
+		ctrl:   ctrl,
 	}
 	// 设置路由
-	r.POST("/receive", func(c *gin.Context) {
+	Router.POST("/receive", func(c *gin.Context) {
 		var pkg Package
 		if err := c.ShouldBindJSON(&pkg); err != nil {
 			c.JSON(400, gin.H{"error": err.Error()})
@@ -66,9 +66,18 @@ func NewCommunicator() Communicator {
 		c.JSON(200, gin.H{"status": "received"})
 	})
 
+	Router.POST("/query", func(c *gin.Context) {
+		var address []byte
+		if err := c.ShouldBindJSON(&address); err != nil {
+			c.JSON(400, gin.H{"error": err.Error()})
+			return
+		}
+		acc := comm.Query(address)
+		c.JSON(200, acc)
+	})
 	// 启动 HTTP 服务
 	go func() {
-		if err := r.Run(); err != nil {
+		if err := Router.Run(); err != nil {
 			panic(err)
 		}
 	}()
@@ -78,7 +87,7 @@ func NewCommunicator() Communicator {
 }
 
 var SendMutex sync.Mutex
-var Sendqueue list.List
+var SendQueue list.List
 
 // 发送包，这个包可以包括一笔交易，也可以是一个新区块
 // 请注意这个函数要使用mutex锁
@@ -87,24 +96,24 @@ func (*Communicator) Send(Package) {
 }
 
 var ReceiveMutex sync.Mutex
-var Receivequeue list.List
+var ReceiveQueue list.List
 
-func (comm *Communicator) Query(p Package) {
-
+func (comm *Communicator) Query(address []byte) entity.Account {
+	return comm.ctrl.QueryAccount(address)
 }
 
 // 接收包
 // 此函数要使用mutex锁
 func (comm *Communicator) Receive(p Package) {
 	// 将请求放入队列
-	Receivequeue.PushBack(&p)
+	ReceiveQueue.PushBack(&p)
 	ReceiveMutex.Lock()
 	defer ReceiveMutex.Unlock()
 	// 处理队列中的请求
 
-	element := Receivequeue.Front()
+	element := ReceiveQueue.Front()
 	pkg := element.Value.(*Package)
-	Receivequeue.Remove(element)
+	ReceiveQueue.Remove(element)
 
 	// 根据包的类型处理请求
 	switch pkg.Type {

@@ -54,3 +54,20 @@ func TestInterface(t *testing.T) {
 	a = typeconv.FromBytes[any](b).(y)
 	println(a.A)
 }
+
+func TestIsomorphismStruct(t *testing.T) {
+	type y struct {
+		A int
+	}
+	b := typeconv.ToBytes(struct {
+		A int
+	}{
+		A: 5,
+	})
+	a := typeconv.FromBytes[y](b)
+	fmt.Println(a)
+}
+func TestHex(t *testing.T) {
+	fmt.Println(typeconv.ToHex([]byte{62, 63, 60, 54, 128}))
+	fmt.Println(typeconv.FromHex(typeconv.ToHex([]byte{62, 63, 60, 54, 128})))
+}

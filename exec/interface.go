@@ -9,12 +9,10 @@ type AbstractTxPool interface {
 	Insert(entity.Transaction)
 	Poll() entity.Transaction
 	Length() int
+	IsFull() bool
 }
 type AbstractController interface {
 	AddTransaction(entity.Transaction)
 	AddBlock(ds.Block)
-	QueryAccount() entity.Account
-}
-type AbstractVM interface {
-	run(account []byte, code []byte, gaslimit uint64, stateroot []byte) []byte
+	QueryAccount([]byte) entity.Account
 }

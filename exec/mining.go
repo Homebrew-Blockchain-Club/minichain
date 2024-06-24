@@ -9,3 +9,7 @@ import (
 func miningNewBlock([]entity.Transaction) ds.Block {
 	return ds.Block{}
 }
+
+func examineNewBlock(*ds.Block) bool {
+	return false
+}
