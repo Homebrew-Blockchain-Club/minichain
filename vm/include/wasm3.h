@@ -182,7 +182,8 @@ d_m3ErrorConst  (trapExit,                      "[trap] program called exit")
 d_m3ErrorConst  (trapAbort,                     "[trap] program called abort")
 d_m3ErrorConst  (trapUnreachable,               "[trap] unreachable executed")
 d_m3ErrorConst  (trapStackOverflow,             "[trap] stack overflow")
-
+// custome
+d_m3ErrorConst  (trapKilled,             "[trap] program was killed by external signal")
 
 //-------------------------------------------------------------------------------------------------------------------------------
 //  configuration, can be found in m3_config.h, m3_config_platforms.h, m3_core.h)

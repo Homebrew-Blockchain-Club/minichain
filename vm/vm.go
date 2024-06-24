@@ -37,6 +37,7 @@ func mkuintptr(arr [8]byte) uintptr {
 		ans <<= 8
 		ans += uintptr(arr[i])
 	}
+
 	//fmt.Printf("%d", int64(ans))
 	return ans
 }
@@ -55,11 +56,11 @@ func (vm *VM) Run(address []byte, stateroot []byte, gaslimit uint64, function st
 		return
 	}
 	functioncstr := C.CString(function)
-	//defer C.free(unsafe.Pointer(&functioncstr))
+	defer C.free(unsafe.Pointer(functioncstr))
 	argvcstr := make([]*C.char, len(argv))
 	for i, s := range argv {
 		cstr := C.CString(s)
-		//defer C.free(unsafe.Pointer(&cstr))
+		defer C.free(unsafe.Pointer(cstr))
 		argvcstr[i] = cstr
 	}
 	mod := (*C.struct_M3Module)(unsafe.Pointer(mkuintptr(modr.data)))
@@ -67,7 +68,7 @@ func (vm *VM) Run(address []byte, stateroot []byte, gaslimit uint64, function st
 	C.AttachToRuntime(mod, rt)
 	go func() {
 		for uint64(C.gascnt) <= gaslimit {
-
+			// fmt.Println(uint64(C.gascnt))
 		}
 		//println(uint64(C.gascnt))
 		cntch <- uint64(C.gascnt)
@@ -81,12 +82,19 @@ func (vm *VM) Run(address []byte, stateroot []byte, gaslimit uint64, function st
 	}()
 	select {
 	case <-cntch:
-		fmt.Printf("out of gas")
+		fmt.Printf("out of gas\n")
+		C.forceexit = 1
+		ret := <-runch
+		fmt.Printf("%s\n", C.GoString((*C.char)(unsafe.Pointer(mkuintptr(ret.data)))))
+
 	case ret := <-runch:
 		if ret.state == C.SUCCESS {
-			tot := <-cntch
-			println(tot)
+			if uint64(C.gascnt) > gaslimit {
+				fmt.Printf("out of gas\n")
+				return
+			}
 			fmt.Printf("%s", C.GoString((*C.char)(unsafe.Pointer(mkuintptr(ret.data)))))
 		}
 	}
+
 }
