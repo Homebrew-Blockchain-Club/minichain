@@ -87,7 +87,7 @@ func NewCommunicator() Communicator {
 }
 
 var SendMutex sync.Mutex
-var Sendqueue list.List
+var SendQueue list.List
 
 // 发送包，这个包可以包括一笔交易，也可以是一个新区块
 // 请注意这个函数要使用mutex锁
@@ -96,7 +96,7 @@ func (*Communicator) Send(Package) {
 }
 
 var ReceiveMutex sync.Mutex
-var Receivequeue list.List
+var ReceiveQueue list.List
 
 func (comm *Communicator) Query(address []byte) entity.Account {
 	return comm.ctrl.QueryAccount(address)
@@ -106,14 +106,14 @@ func (comm *Communicator) Query(address []byte) entity.Account {
 // 此函数要使用mutex锁
 func (comm *Communicator) Receive(p Package) {
 	// 将请求放入队列
-	Receivequeue.PushBack(&p)
+	ReceiveQueue.PushBack(&p)
 	ReceiveMutex.Lock()
 	defer ReceiveMutex.Unlock()
 	// 处理队列中的请求
 
-	element := Receivequeue.Front()
+	element := ReceiveQueue.Front()
 	pkg := element.Value.(*Package)
-	Receivequeue.Remove(element)
+	ReceiveQueue.Remove(element)
 
 	// 根据包的类型处理请求
 	switch pkg.Type {
