@@ -914,7 +914,7 @@ d_m3Op(Entry) {
         trace_rt->callDepth++;
 #endif
 
-        m3ret_t r = nextOpImpl();
+        m3ret_t r = nextOpImplGas();
 
 #if d_m3EnableStrace >= 2
         trace_rt->callDepth--;
@@ -958,7 +958,7 @@ d_m3Op(Loop) {
         d_m3TracePrint("iter {");
         trace_rt->callDepth++;
 #endif
-        r = nextOpImpl();
+        r = nextOpImplGas();
 
 #if d_m3EnableStrace >= 3
         trace_rt->callDepth--;
