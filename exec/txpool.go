@@ -69,6 +69,9 @@ func (pool *DefualtTxPool) Insert(tx entity.Transaction) {
 	}
 
 	// If the pending row doesn't exist, create a new one
+	if pool.Pendings == nil {
+		pool.Pendings = make(map[string]RowBlks)
+	}
 	if len(rowBlks) == 0 {
 		newRowBlk := make(RowBlks, 0)
 		pool.Pendings[address] = newRowBlk

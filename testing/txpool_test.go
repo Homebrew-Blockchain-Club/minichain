@@ -1,7 +1,6 @@
 package testing
 
 import (
-	"fmt"
 	"github.com/Homebrew-Blockchain-Club/minichain/ds"
 	"github.com/Homebrew-Blockchain-Club/minichain/entity"
 	"github.com/Homebrew-Blockchain-Club/minichain/exec"
@@ -42,8 +41,6 @@ func TestDefaultTxPool(t *testing.T) {
 
 	account1Byte := typeconv.ToBytes(account1)
 	account2Byte := typeconv.ToBytes(account2)
-	fmt.Println(typeconv.ToHex(address1.Bytes()))
-	fmt.Println(typeconv.ToHex(address2.Bytes()))
 	pool.StatDB.Update(typeconv.ToHex(address1.Bytes()), account1Byte)
 	pool.StatDB.Update(typeconv.ToHex(address2.Bytes()), account2Byte)
 
