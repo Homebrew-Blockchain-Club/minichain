@@ -1,5 +1,5 @@
 package vm
 
 type AbstractVM interface {
-	Run(account []byte, code []byte, gaslimit uint64, stateroot []byte) []byte
+	Run(address []byte, stateroot []byte, gaslimit uint64, function string, argv []string)
 }
