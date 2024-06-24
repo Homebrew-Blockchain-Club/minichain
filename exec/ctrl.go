@@ -26,6 +26,6 @@ func (*Controller) AddBlock(ds.Block) {
 }
 
 // 询问账号信息，从/ds中得到账号信息并返回
-func (*Controller) QueryAccount() entity.Account {
+func (*Controller) QueryAccount([]byte) entity.Account {
 	return entity.Account{}
 }
