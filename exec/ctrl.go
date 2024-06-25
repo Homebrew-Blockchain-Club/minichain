@@ -4,7 +4,6 @@ package exec
 import (
 	"github.com/Homebrew-Blockchain-Club/minichain/ds"
 	"github.com/Homebrew-Blockchain-Club/minichain/entity"
-	"github.com/Homebrew-Blockchain-Club/minichain/hasher"
 	"github.com/Homebrew-Blockchain-Club/minichain/typeconv"
 )
 
@@ -38,13 +37,8 @@ func (c *Controller) AddTransaction(tx entity.Transaction) int { //满了的话�
 // 加入由其他节点挖出来的新区块。应当先进行验证再加入到本地区块链中，注意加入区块链时是直接对ds进行操作。
 // 验证流程：1.满足PoW约束 2.MPT证明通过
 func (c *Controller) AddBlock(block ds.Block) bool {
-	if check(hasher.Hash(typeconv.ToBytes(block.Header)), 5) {
-		if ds.GetMPT(block.Header.StateRoot).Proof() {
-			ds.SetTop(&block)
-			return true
-		} else {
-			return false
-		}
+	if examineNewBlock(&block) {
+		return true
 	} else {
 		return false
 	}
