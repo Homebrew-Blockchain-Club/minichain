@@ -23,7 +23,7 @@ func MiningNewBlock(txs []entity.Transaction) ds.Block {
 	// 初始化交易树、收据树、状态树
 	tranTree := ds.NewMPT()
 	reciTree := ds.NewMPT()
-	stateTree := ds.NewMPTFromPrevious(newBlock.Header.Prev)
+	stateTree := ds.NewMPTFromPrevious(preBlock.Header.StateRoot)
 
 	// 处理交易
 	for _, tx := range txs {
