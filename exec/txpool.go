@@ -23,12 +23,12 @@ type SortedTxsBlk struct {
 	address  string
 }
 
-type RowBlks []SortedTxsBlk
+type TxsBlks []SortedTxsBlk
 
-func (td RowBlks) Len() int {
+func (td TxsBlks) Len() int {
 	return len(td)
 }
-func (td RowBlks) Less(i, j int) bool {
+func (td TxsBlks) Less(i, j int) bool {
 	f := true
 	if td[i].address == td[j].address {
 		f = td[i].Txs[len(td[i].Txs)-1].Nonce < td[j].Txs[0].Nonce
@@ -36,7 +36,7 @@ func (td RowBlks) Less(i, j int) bool {
 	return td[i].GasPrice > td[j].GasPrice && f
 
 }
-func (td RowBlks) Swap(i, j int) {
+func (td TxsBlks) Swap(i, j int) {
 	td[i], td[j] = td[j], td[i]
 }
 
@@ -55,7 +55,7 @@ func (td Txs) Swap(i, j int) {
 
 type DefualtTxPool struct {
 	StatDB   *ds.MPT
-	Pendings map[string]RowBlks // map to store pending transactions grouped by nonce
+	Pendings map[string]TxsBlks // map to store pending transactions grouped by nonce
 	Queues   map[string]Txs     // queue for out-of-order nonce transactions
 	MiniPool Txs                // in order to poll one by one
 }
@@ -75,24 +75,24 @@ func (pool *DefualtTxPool) Insert(tx entity.Transaction) {
 
 	// If the pending row doesn't exist, create a new one
 	if pool.Pendings == nil {
-		pool.Pendings = make(map[string]RowBlks)
+		pool.Pendings = make(map[string]TxsBlks)
 	}
 
 	// Trying to insert the transaction into the pending list
 	if tx.Nonce == account.Nonce+1 || VerifyNonce(pool.GetPendingLastNonce(address), tx.Nonce) {
 
 		if len(rowBlks) == 0 {
-			pool.CreateBlk(tx, address)
+			pool.CreateTxsBlk(tx, address)
 		} else {
 			for i := len(rowBlks) - 1; i >= len(rowBlks)-1; i-- {
 				if rowBlks[i].GasPrice == tx.Gas && VerifyNonce(pool.GetPendingLastNonce(address), tx.Nonce) {
 					pool.Pendings[address][i].Txs = append(pool.Pendings[address][i].Txs, tx)
 				} else {
-					pool.CreateBlk(tx, address)
+					pool.CreateTxsBlk(tx, address)
 				}
 			}
 		}
-		pool.PollFromQueue(address)
+		pool.PollFromQueueToPending(address)
 
 	} else if tx.Nonce > pool.GetPendingLastNonce(address)+1 {
 		// If the nonce is out of order, add it to the queue
@@ -110,8 +110,8 @@ func (pool *DefualtTxPool) Insert(tx entity.Transaction) {
 	pool.AllSortedByGas()
 }
 
-// CreateBlk Create Blk and append the first new transaction
-func (pool *DefualtTxPool) CreateBlk(tx entity.Transaction, address string) {
+// CreateTxsBlk Create Blk and append the first new transaction
+func (pool *DefualtTxPool) CreateTxsBlk(tx entity.Transaction, address string) {
 	newBlk := SortedTxsBlk{
 		Txs:      make([]entity.Transaction, 0),
 		GasPrice: tx.Gas,
@@ -139,7 +139,7 @@ func (pool *DefualtTxPool) Length() int {
 }
 
 func (pool *DefualtTxPool) AllSortedByGas() {
-	allBlk := make(RowBlks, 0)
+	allBlk := make(TxsBlks, 0)
 	for _, rowBlk := range pool.Pendings {
 		allBlk = append(allBlk, rowBlk...)
 	}
@@ -176,14 +176,14 @@ func VerifyNonce(lastNonce uint64, nonce uint64) bool {
 	return nonce == lastNonce+1
 }
 
-// PollFromQueue Put the transactions to pending
-func (pool *DefualtTxPool) PollFromQueue(address string) {
+// PollFromQueueToPending Put the transactions to pending
+func (pool *DefualtTxPool) PollFromQueueToPending(address string) {
 	// Queue has been sorted by nonce
 	length := len(pool.Queues[address])
 	for i := 0; i < length; i++ {
 		firstTx := pool.Queues[address][0]
 		if VerifyNonce(pool.GetPendingLastNonce(address), firstTx.Nonce) {
-			pool.PollFromQueueInsert(firstTx, address)
+			pool.QueueInsertToPending(firstTx, address)
 			pool.Queues[address] = append(pool.Queues[address][1:])
 
 			if len(pool.Queues[address]) == 0 {
@@ -193,13 +193,13 @@ func (pool *DefualtTxPool) PollFromQueue(address string) {
 	}
 }
 
-func (pool *DefualtTxPool) PollFromQueueInsert(tx entity.Transaction, address string) {
+func (pool *DefualtTxPool) QueueInsertToPending(tx entity.Transaction, address string) {
 	rowBlks := pool.Pendings[address]
 	for i := len(rowBlks) - 1; i >= len(rowBlks)-1; i-- {
 		if rowBlks[i].GasPrice == tx.Gas && VerifyNonce(pool.GetPendingLastNonce(address), tx.Nonce) {
 			pool.Pendings[address][i].Txs = append(pool.Pendings[address][i].Txs, tx)
 		} else {
-			pool.CreateBlk(tx, address)
+			pool.CreateTxsBlk(tx, address)
 		}
 	}
 }
