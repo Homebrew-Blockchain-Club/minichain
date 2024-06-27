@@ -19,5 +19,7 @@ ResultModule GetModuleFromBytecode(IM3Environment env,
                                    size_t bytecodelen);
 ResultString RunFunction(IM3Module mod, IM3Runtime rt, IM3Environment env,
                      const char *f, int argc, const char *argv[]);
-void AttachToRuntime(IM3Module mod, IM3Runtime rt);
-extern int gascnt;
+ResultString AttachToRuntime(IM3Module mod, IM3Runtime rt);
+extern void set(char *key, char *val);
+extern char *get(char *key);
+extern char *call(char *addr, char *func, int argc, char *argv[]);

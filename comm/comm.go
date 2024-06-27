@@ -20,7 +20,7 @@ type Communicator struct {
 	ctrl   exec.AbstractController
 }
 
-const CONTROLLER_UNIMPLEMENTED = true
+const CONTROLLER_UNIMPLEMENTED = false
 
 type MockController struct {
 	Transactions []entity.Transaction

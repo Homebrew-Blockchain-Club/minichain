@@ -1,11 +1,12 @@
 package exec
 
 import (
+	"sort"
+
 	"github.com/Homebrew-Blockchain-Club/minichain/ds"
 	"github.com/Homebrew-Blockchain-Club/minichain/entity"
 	"github.com/Homebrew-Blockchain-Club/minichain/typeconv"
 	"github.com/ethereum/go-ethereum/common"
-	"sort"
 )
 
 // MAX_POOL_SIZE PoolSize fixed
@@ -15,6 +16,7 @@ type TxPool interface {
 	Insert(tx entity.Transaction)
 	Poll() entity.Transaction
 	IsFull() bool
+	Length() int
 }
 
 type SortedTxsBlk struct {
@@ -36,6 +38,9 @@ func (td TxsBlks) Less(i, j int) bool {
 }
 func (td TxsBlks) Swap(i, j int) {
 	td[i], td[j] = td[j], td[i]
+}
+func NewTxPool() TxPool {
+	return &DefualtTxPool{StatDB: ds.NewMPT()}
 }
 
 type Txs []entity.Transaction
@@ -185,7 +190,7 @@ func (pool *DefualtTxPool) PollFromQueueToPending(address string) {
 		firstTx := pool.Queues[address][0]
 		if VerifyNonce(pool.GetPendingLastNonce(address), firstTx.Nonce) {
 			pool.QueueInsertToPending(firstTx, address)
-			pool.Queues[address] = append(pool.Queues[address][1:])
+			pool.Queues[address] = pool.Queues[address][1:]
 
 			if len(pool.Queues[address]) == 0 {
 				pool.DeleteQueueRow(address)

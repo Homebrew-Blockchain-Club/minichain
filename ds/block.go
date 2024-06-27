@@ -6,7 +6,7 @@ import (
 	"github.com/Homebrew-Blockchain-Club/minichain/typeconv"
 )
 
-const DIFFICULTY = 5
+const DIFFICULTY = 1
 
 var top *Block
 
@@ -34,7 +34,7 @@ type BlockHeader struct {
 	StateRoot       []byte
 	TransactionRoot []byte
 	RecipientRoot   []byte
-	Miner []byte
+	Miner           []byte
 }
 type Block struct {
 	Header       BlockHeader

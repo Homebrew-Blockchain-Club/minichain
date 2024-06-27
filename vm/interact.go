@@ -21,12 +21,24 @@ import (
 //			return fmt.Errorf("account %s doesn't have enough balance", string(from))
 //		}
 //	}
-func setImpl(key, val string) {
-	account := typeconv.FromBytes[entity.Account](ds.GetMPT(VMContext.blk.Header.StateRoot).Query(VMContext.address))
-	var stateroot *ds.MPT
-	if tmp := ds.GetMPT(account.StorageRoot); tmp == nil {
-		stateroot := ds.NewMPT()
+func (vm *VM) getStorageRoot(address []byte) *ds.MPT {
+	var rt *ds.MPT
+	account := typeconv.FromBytes[entity.Account](vm.stateRoot.Query(address))
+	if root, ok := vm.pendingStorage[string(address)]; ok {
+		rt = ds.GetMPT(root)
+	} else if ds.GetMPT(account.StorageRoot) != nil {
+		rt = ds.NewMPTFromPrevious(account.StorageRoot)
 	} else {
-		stateroot = tmp
+		rt = ds.NewMPT()
 	}
+	return rt
+}
+func (vm *VM) setImpl(address, key, val []byte) {
+	rt := vm.getStorageRoot(address)
+	rt.Update(key, val)
+	vm.pendingStorage[string(address)] = typeconv.ToBytes(*rt)
+}
+
+func (vm *VM) getImpl(address, key []byte) []byte {
+	return vm.getStorageRoot(address).Query(key)
 }

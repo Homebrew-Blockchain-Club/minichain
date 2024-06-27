@@ -15,6 +15,7 @@ func check() {
 func Store(key []byte, val []byte) {
 	check()
 	db.Put(key, val, nil)
+
 }
 
 // 查询某个key对应的值，若不存在则返回nil

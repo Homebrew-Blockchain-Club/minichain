@@ -1,6 +1,8 @@
 package entity
 
 import (
+	"bytes"
+
 	"github.com/Homebrew-Blockchain-Club/minichain/hasher"
 	"github.com/Homebrew-Blockchain-Club/minichain/typeconv"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -28,20 +30,27 @@ func Verify(tx Transaction) bool {
 	hash := hasher.Hash(raw)
 	sig := append(r, s...)
 	sig = append(sig, v...)
-	pubkey, _ := crypto.SigToPub(hash, sig)
-	addr := crypto.PubkeyToAddress(*pubkey)
-	for pos, x := range addr.Bytes() {
-		if x != tx.From[pos] {
-			return false
-		}
+	pubkey, err := crypto.SigToPub(hash, sig)
+	if err != nil {
+		return false
 	}
-	return true
+	addr := crypto.PubkeyToAddress(*pubkey)
+	// for pos, x := range addr.Bytes() {
+	// 	if x != tx.From[pos] {
+	// 		return false
+	// 	}
+	// }
+	return bytes.Equal(addr.Bytes(), tx.From)
+
 }
 func Sign(tx *Transaction, privateKey []byte) {
 	key, _ := crypto.ToECDSA(privateKey)
 	txbyte := typeconv.ToBytes(*tx)
 	hash := hasher.Hash(txbyte)
 	sign, _ := crypto.Sign(hash, key)
+	// if err != nil {
+	// 	println(err.Error())
+	// }
 	//r := new(big.Int).SetBytes(sign[:32])
 	r := sign[:32]
 	s := sign[32:64]

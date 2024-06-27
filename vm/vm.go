@@ -17,17 +17,34 @@ import (
 )
 
 type VM struct {
-	env *C.struct_M3Environment
+	env           *C.struct_M3Environment
+	stateRoot     *ds.MPT
+	gas, gaslimit uint64
+
+	pendingStorage map[string][]byte //key 是待提交的账户StorageRoot
 }
 
 // 创建一个新的解释器
-func NewVM() *VM {
-	env := C.m3_NewEnvironment()
+func NewVM(address []byte, stateRoot *ds.MPT, gas, gaslimit uint64) *VM {
 	return &VM{
-		env: env,
+		env:            C.m3_NewEnvironment(),
+		pendingStorage: make(map[string][]byte),
+		stateRoot:      stateRoot,
+		gas:            gas,
+		gaslimit:       gaslimit,
 	}
 }
-
+func (vm *VM) Finish() {
+	//st := ds.GetMPT(vm.blk.Header.StateRoot)
+	for key, val := range vm.pendingStorage {
+		account := typeconv.FromBytes[entity.Account](vm.stateRoot.Query([]byte(key)))
+		tr := typeconv.FromBytes[ds.MPT](val)
+		trByte := tr.Commit()
+		account.StorageRoot = trByte
+		vm.stateRoot.Update([]byte(key), typeconv.ToBytes(account))
+	}
+	vm.Destruct()
+}
 func (vm *VM) Destruct() {
 	C.m3_FreeEnvironment(vm.env)
 }
@@ -37,34 +54,46 @@ func mkuintptr(arr [8]byte) uintptr {
 		ans <<= 8
 		ans += uintptr(arr[i])
 	}
-
 	//fmt.Printf("%d", int64(ans))
 	return ans
 }
 
-var VMContext struct {
-	vm            *VM
-	blk           *ds.Block
-	gas, gaslimit uint64
-	address       []byte
-}
-
 // TODO 区块链上下文如何引入
 // 用此解释器执行VM字节码，并给出执行的合约账户地址和gas上限
-func (vm *VM) Run(address []byte, blk *ds.Block, gas, gaslimit uint64, function string, argv []string) {
-	VMContext.vm = vm
-	VMContext.blk = blk
-	VMContext.gas = gas
-	VMContext.gaslimit = gaslimit
+func (vm *VM) Call(address []byte, function string, argv []string) (string, error) {
+	// prevSetImpl := vmContext.setImpl
+	// vmContext.setImpl =vm.setImpl(address, key, val)
+
+	// //C.set = (*[0]byte)(unsafe.Pointer(setWrapper))
+	// defer func() { vmContext.setImpl = prevSetImpl }()
+	// prevGetImpl := vmContext.getImpl
+	// vmContext.getImpl =
+	// 	vm.getImpl(address, key)
+
+	// //C.get = (*[0]byte)(unsafe.Pointer(&vmContext.getImpl))
+	// defer func() { vmContext.getImpl = prevGetImpl }()
+	// prevCallImpl := vmContext.callImpl
+	// vmContext.callImpl =vm.Call(address, function, argv)
+
+	// //C.call = (*[0]byte)(unsafe.Pointer(&vmContext.callImpl))
+
+	// defer func() { vmContext.callImpl = prevCallImpl }()
+	preVM := vmContext.vm
+	vmContext.vm = vm
+	defer func() { vmContext.vm = preVM }()
+	preAddress := vmContext.address
+	vmContext.address = address
+	defer func() { vmContext.address = preAddress }()
 	cntch := make(chan uint64)
 	runch := make(chan C.struct_ResultString)
-	account := typeconv.FromBytes[entity.Account](ds.GetMPT(blk.Header.StateRoot).Query(address))
+	account := typeconv.FromBytes[entity.Account](vm.stateRoot.Query(address))
 	if account.Code == nil {
-		return
+		return "", fmt.Errorf("no such account")
 	}
 	modr := C.GetModuleFromBytecode(vm.env, (*C.uchar)(unsafe.Pointer(&account.Code[0])), C.size_t(len(account.Code)))
 	if modr.state == C.ERROR {
-		return
+		return "", fmt.Errorf("invalid bytecode")
+
 	}
 	functioncstr := C.CString(function)
 	defer C.free(unsafe.Pointer(functioncstr))
@@ -76,12 +105,14 @@ func (vm *VM) Run(address []byte, blk *ds.Block, gas, gaslimit uint64, function 
 	}
 	mod := (*C.struct_M3Module)(unsafe.Pointer(mkuintptr(modr.data)))
 	rt := C.m3_NewRuntime(vm.env, 64*1024, nil)
-	C.AttachToRuntime(mod, rt)
+	defer C.m3_FreeRuntime(rt)
+	ret := C.AttachToRuntime(mod, rt)
+	if ret.state == C.ERROR {
+		return "", fmt.Errorf(C.GoString((*C.char)(unsafe.Pointer(mkuintptr(ret.data)))))
+	}
 	go func() {
-		for uint64(C.gascnt) <= gaslimit {
-			// fmt.Println(uint64(C.gascnt))
+		for uint64(C.gascnt) <= vm.gaslimit {
 		}
-		//println(uint64(C.gascnt))
 		cntch <- uint64(C.gascnt)
 	}()
 	go func() {
@@ -93,18 +124,21 @@ func (vm *VM) Run(address []byte, blk *ds.Block, gas, gaslimit uint64, function 
 	}()
 	select {
 	case <-cntch:
-		fmt.Printf("out of gas\n")
+		//fmt.Printf("out of gas\n")
 		C.forceexit = 1
-		ret := <-runch
-		fmt.Printf("%s\n", C.GoString((*C.char)(unsafe.Pointer(mkuintptr(ret.data)))))
+		//ret := <-runch
+		//fmt.Printf("%s\n", C.GoString((*C.char)(unsafe.Pointer(mkuintptr(ret.data)))))
+		return "", fmt.Errorf("out of gas")
 
 	case ret := <-runch:
+		if uint64(C.gascnt) > vm.gaslimit {
+			//fmt.Printf("out of gas\n")
+			return "", fmt.Errorf("out of gas")
+		}
 		if ret.state == C.SUCCESS {
-			if uint64(C.gascnt) > gaslimit {
-				fmt.Printf("out of gas\n")
-				return
-			}
-			fmt.Printf("%s", C.GoString((*C.char)(unsafe.Pointer(mkuintptr(ret.data)))))
+			return C.GoString((*C.char)(unsafe.Pointer(mkuintptr(ret.data)))), nil
+		} else {
+			return "", fmt.Errorf(C.GoString((*C.char)(unsafe.Pointer(mkuintptr(ret.data)))))
 		}
 	}
 

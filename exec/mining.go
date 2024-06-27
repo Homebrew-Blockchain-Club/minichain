@@ -3,6 +3,7 @@ package exec
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/Homebrew-Blockchain-Club/minichain/ds"
 	"github.com/Homebrew-Blockchain-Club/minichain/entity"
 	"github.com/Homebrew-Blockchain-Club/minichain/hasher"
@@ -17,13 +18,18 @@ func MiningNewBlock(txs []entity.Transaction) ds.Block {
 		// 创世区块
 		newBlock.Header.Prev = nil
 	} else {
-		newBlock.Header.Prev = typeconv.ToBytes(*preBlock)
+		newBlock.Header.Prev = hasher.Hash(typeconv.ToBytes(*preBlock))
 	}
 
 	// 初始化
 	tranTree := ds.NewMPT()
 	reciTree := ds.NewMPT()
-	stateTree := ds.NewMPTFromPrevious(preBlock.Header.StateRoot)
+	var stateTree *ds.MPT
+	if preBlock != nil {
+		stateTree = ds.NewMPTFromPrevious(preBlock.Header.StateRoot)
+	} else {
+		stateTree = ds.NewMPT()
+	}
 
 	// 处理交易
 	for _, tx := range txs {
@@ -44,11 +50,11 @@ func MiningNewBlock(txs []entity.Transaction) ds.Block {
 			newBlock.Transactions = append(newBlock.Transactions, tx)
 
 			// 记录交易树
-			tranTree.Update(typeconv.ToBytes(tx), typeconv.ToBytes(tx))
+			tranTree.Update(typeconv.ToHex(typeconv.ToBytes(tx)), typeconv.ToBytes(tx))
 		}
 
 		// 记录收据树
-		reciTree.Update(typeconv.ToBytes(tx), typeconv.ToBytes(result))
+		reciTree.Update(typeconv.ToHex(typeconv.ToBytes(tx)), typeconv.ToBytes(result))
 	}
 
 	// 提交树
@@ -80,6 +86,54 @@ func ExamineNewBlock(newBlock *ds.Block) bool {
 			return false
 		}
 	}
+	for _, tx := range newBlock.Transactions {
+		if !entity.Verify(tx) {
+			return false
+		}
+	}
+	// 初始化
+	tranTreeCmp := ds.NewMPT()
+	reciTreeCmp := ds.NewMPT()
+	var stateTreeCmp *ds.MPT
+	if prevBlock != nil {
+		stateTreeCmp = ds.NewMPTFromPrevious(prevBlock.Header.StateRoot)
+	} else {
+		stateTreeCmp = ds.NewMPT()
+	}
+
+	// 处理交易
+	for _, tx := range newBlock.Transactions {
+		result := entity.Result{
+			Hash:    hasher.Hash(typeconv.ToBytes(tx)),
+			State:   "FAIL",
+			Message: "交易验证失败",
+		}
+
+		if entity.Verify(tx) {
+			// 更新状态树
+			res, err := updateStateTree(stateTreeCmp, tx)
+			if err == nil {
+				result = res
+			} else {
+				result.Message = err.Error()
+			}
+			//newBlock.Transactions = append(newBlock.Transactions, tx)
+
+			// 记录交易树
+			tranTreeCmp.Update(typeconv.ToHex(typeconv.ToBytes(tx)), typeconv.ToBytes(tx))
+		}
+
+		// 记录收据树
+		reciTreeCmp.Update(typeconv.ToHex(typeconv.ToBytes(tx)), typeconv.ToBytes(result))
+	}
+	tranTreeCmp.Committed = true
+	reciTreeCmp.Committed = true
+	stateTreeCmp.Committed = true
+	// 提交树
+	//newBlock.Header.TransactionRoot = tranTree.Commit()
+	//newBlock.Header.RecipientRoot = reciTree.Commit()
+	//newBlock.Header.StateRoot = stateTree.Commit()
+
 	//验证工作量证明
 	blockHash := hasher.Hash(typeconv.ToBytes(newBlock.Header))
 	if !isValidHash(blockHash) {
@@ -87,26 +141,23 @@ func ExamineNewBlock(newBlock *ds.Block) bool {
 	}
 	//验证交易根哈希
 	tranTree := ds.GetMPT(newBlock.Header.TransactionRoot)
-	if tranTree == nil || !tranTree.Proof() {
+	if tranTree == nil || !bytes.Equal(hasher.Hash(typeconv.ToBytes(*tranTreeCmp)), newBlock.Header.TransactionRoot) || !tranTreeCmp.Proof() {
 		return false
 	}
 	//验证收据根哈希
 	reciTree := ds.GetMPT(newBlock.Header.RecipientRoot)
-	if reciTree == nil || !reciTree.Proof() {
+	if reciTree == nil || !bytes.Equal(hasher.Hash(typeconv.ToBytes(*reciTreeCmp)), newBlock.Header.RecipientRoot) || !reciTreeCmp.Proof() {
 		return false
 	}
 	//验证状态根哈希
 	stateTree := ds.GetMPT(newBlock.Header.StateRoot)
-	if stateTree == nil || !stateTree.Proof() {
+	if stateTree == nil || !bytes.Equal(hasher.Hash(typeconv.ToBytes(*stateTreeCmp)), newBlock.Header.StateRoot) || !stateTreeCmp.Proof() {
 		return false
 	}
 	//验证所有交易的合法性
-	for _, tx := range newBlock.Transactions {
-		if !entity.Verify(tx) {
-			return false
-		}
-	}
-
+	newBlock.Header.TransactionRoot = tranTreeCmp.Commit()
+	newBlock.Header.RecipientRoot = reciTreeCmp.Commit()
+	newBlock.Header.StateRoot = stateTreeCmp.Commit()
 	return true
 }
 func isValidHash(hash []byte) bool {
@@ -142,8 +193,8 @@ func updateStateTree(stateTree *ds.MPT, tx entity.Transaction) (entity.Result, e
 	toAccount.Balance += tx.Amount
 
 	// 写回状态树
-	stateTree.Update(tx.From, typeconv.ToBytes(fromAccount))
-	stateTree.Update(tx.To, typeconv.ToBytes(toAccount))
+	stateTree.Update(typeconv.ToHex(tx.From), typeconv.ToBytes(fromAccount))
+	stateTree.Update(typeconv.ToHex(tx.To), typeconv.ToBytes(toAccount))
 
 	return entity.Result{
 		Hash:    hasher.Hash(typeconv.ToBytes(tx)),

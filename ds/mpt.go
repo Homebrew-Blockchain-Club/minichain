@@ -162,10 +162,14 @@ func (tr *MPT) commit(cur node, key []byte) {
 
 // 将本树持久化
 func (tr *MPT) Commit() []byte {
-	tr.commit(getNode(tr.Root), []byte{})
+	if tr.Root != "" {
+		tr.commit(getNode(tr.Root), []byte{})
+	}
+	tr.Committed = true
 	byte := typeconv.ToBytes(*tr)
-	storage.Store(hasher.Hash(byte), byte)
-	return byte
+	hash := hasher.Hash(byte)
+	storage.Store(hash, byte)
+	return hash
 }
 func prefixLen(a, b []byte) int {
 	i, len := 0, min(len(a), len(b))
