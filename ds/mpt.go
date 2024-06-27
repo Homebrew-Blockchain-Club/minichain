@@ -15,6 +15,7 @@ type node interface {
 
 // 将[]byte转为string后取得
 var nodeCache map[string]node = make(map[string]node)
+var prevCache map[string]string = make(map[string]string)
 
 // 被保存了的节点必然为被哈希的节点
 type (
@@ -55,11 +56,6 @@ func (x *valueNode) isDirty() bool {
 }
 func (x *valueNode) setDirty() {
 	x.Dirty = true
-}
-
-type MPT struct {
-	Root      string //root的哈希值
-	Committed bool
 }
 
 func getNode(hash string) node {
@@ -105,8 +101,18 @@ func hash(x node, key string) string {
 func setNode(hash string, cur node) {
 	nodeCache[hash] = cur
 }
+
+type MPT struct {
+	Root      string //root的哈希值
+	Committed bool
+}
+
 func GetMPT(hash []byte) *MPT {
-	ret := typeconv.FromBytes[MPT](storage.Query(hash))
+	mptbyte := storage.Query(hash)
+	if mptbyte == nil {
+		return nil
+	}
+	ret := typeconv.FromBytes[MPT](mptbyte)
 	return &ret
 }
 
@@ -121,10 +127,10 @@ func (tr *MPT) IsComitted() bool {
 	return tr.Committed
 }
 
-// 创建新的MPT，用于状态树
-func NewStateMPT(top *Block) *MPT {
+// 创建新的MPT
+func NewMPTFromPrevious(prevhash []byte) *MPT {
 	return &MPT{
-		Root:      typeconv.FromBytes[string](top.Header.StateRoot),
+		Root:      GetMPT(prevhash).Root,
 		Committed: false,
 	}
 }
@@ -251,6 +257,9 @@ func (tr *MPT) update(cur node, prefix, key []byte, val node) (bool, node) {
 	return false, nil
 	//return nil
 }
+func (tr *MPT) Rollback() {
+	tr.Root = prevCache[tr.Root]
+}
 
 // 向对应的MPT存储键值对。若不存在则会创建新的，若存在则会覆盖原数据
 func (tr *MPT) Update(key, val []byte) {
@@ -264,6 +273,8 @@ func (tr *MPT) Update(key, val []byte) {
 	}
 	_, root = tr.update(root, []byte{}, key, Val)
 	newHash := hash(root, "")
+	prevCache[newHash] = tr.Root
+
 	tr.Root = newHash
 }
 func (tr *MPT) query(cur node, key []byte) []byte {

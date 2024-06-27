@@ -43,13 +43,19 @@ func mkuintptr(arr [8]byte) uintptr {
 }
 
 var VMContext struct {
+	vm            *VM
 	blk           *ds.Block
 	gas, gaslimit uint64
+	address       []byte
 }
 
 // TODO 区块链上下文如何引入
 // 用此解释器执行VM字节码，并给出执行的合约账户地址和gas上限
 func (vm *VM) Run(address []byte, blk *ds.Block, gas, gaslimit uint64, function string, argv []string) {
+	VMContext.vm = vm
+	VMContext.blk = blk
+	VMContext.gas = gas
+	VMContext.gaslimit = gaslimit
 	cntch := make(chan uint64)
 	runch := make(chan C.struct_ResultString)
 	account := typeconv.FromBytes[entity.Account](ds.GetMPT(blk.Header.StateRoot).Query(address))
@@ -57,7 +63,6 @@ func (vm *VM) Run(address []byte, blk *ds.Block, gas, gaslimit uint64, function 
 		return
 	}
 	modr := C.GetModuleFromBytecode(vm.env, (*C.uchar)(unsafe.Pointer(&account.Code[0])), C.size_t(len(account.Code)))
-
 	if modr.state == C.ERROR {
 		return
 	}
