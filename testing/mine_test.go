@@ -8,7 +8,6 @@ import (
 )
 
 func TestMiningNewBlock(t *testing.T) {
-	// 准备一些交易作为测试数据
 	txs := []entity.Transaction{
 		{
 			Nonce:    1,
@@ -34,7 +33,6 @@ func TestMiningNewBlock(t *testing.T) {
 			S:        []byte("S_value"),
 			V:        []byte("V_value"),
 		},
-		// 添加更多交易作为测试数据
 	}
 
 	// 执行挖矿操作
@@ -52,7 +50,7 @@ func TestExamineNewBlock(t *testing.T) {
 	// 创建一个虚拟的区块作为测试数据
 	newBlock := &ds.Block{
 		Header: ds.BlockHeader{
-			Prev:            nil, // 假设这是创世区块
+			Prev:            nil, // 创世区块
 			TransactionRoot: []byte("transaction_root_hash"),
 			RecipientRoot:   []byte("recipient_root_hash"),
 			StateRoot:       []byte("state_root_hash"),

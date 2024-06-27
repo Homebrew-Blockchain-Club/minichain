@@ -20,7 +20,7 @@ func MiningNewBlock(txs []entity.Transaction) ds.Block {
 		newBlock.Header.Prev = typeconv.ToBytes(*preBlock)
 	}
 
-	// 初始化交易树、收据树、状态树
+	// 初始化
 	tranTree := ds.NewMPT()
 	reciTree := ds.NewMPT()
 	stateTree := ds.NewMPTFromPrevious(preBlock.Header.StateRoot)
@@ -34,7 +34,7 @@ func MiningNewBlock(txs []entity.Transaction) ds.Block {
 		}
 
 		if entity.Verify(tx) {
-			// 更新状态树并记录成功状态
+			// 更新状态树
 			res, err := updateStateTree(stateTree, tx)
 			if err == nil {
 				result = res
@@ -43,20 +43,20 @@ func MiningNewBlock(txs []entity.Transaction) ds.Block {
 			}
 			newBlock.Transactions = append(newBlock.Transactions, tx)
 
-			// 记录交易到交易树
+			// 记录交易树
 			tranTree.Update(typeconv.ToBytes(tx), typeconv.ToBytes(tx))
 		}
 
-		// 记录交易结果到收据树
+		// 记录收据树
 		reciTree.Update(typeconv.ToBytes(tx), typeconv.ToBytes(result))
 	}
 
-	// 提交交易树、收据树和状态树
+	// 提交树
 	newBlock.Header.TransactionRoot = tranTree.Commit()
 	newBlock.Header.RecipientRoot = reciTree.Commit()
 	newBlock.Header.StateRoot = stateTree.Commit()
 
-	// 挖掘区块，调整Nonce以满足工作量证明的要求
+	// 挖掘区块
 	var nonce uint64
 	for {
 		newBlock.Header.Nonce = nonce
@@ -118,17 +118,17 @@ func isValidHash(hash []byte) bool {
 	return true
 }
 func updateStateTree(stateTree *ds.MPT, tx entity.Transaction) (entity.Result, error) {
-	// 查询发送者账户的当前状态
+	// 查询发送者账户
 	fromAccountBytes := stateTree.Query(tx.From)
 	var fromAccount entity.Account
 	typeconv.FromBytesInto(fromAccountBytes, &fromAccount)
 
-	// 查询接收者账户的当前状态
+	// 查询接收者账户
 	toAccountBytes := stateTree.Query(tx.To)
 	var toAccount entity.Account
 	typeconv.FromBytesInto(toAccountBytes, &toAccount)
 
-	// 检查余额是否足够
+	// 检查余额
 	if fromAccount.Balance < tx.Amount {
 		return entity.Result{
 			Hash:    hasher.Hash(typeconv.ToBytes(tx)),
@@ -141,7 +141,7 @@ func updateStateTree(stateTree *ds.MPT, tx entity.Transaction) (entity.Result, e
 	fromAccount.Balance -= tx.Amount
 	toAccount.Balance += tx.Amount
 
-	// 将更新后的账户状态写回状态树
+	// 写回状态树
 	stateTree.Update(tx.From, typeconv.ToBytes(fromAccount))
 	stateTree.Update(tx.To, typeconv.ToBytes(toAccount))
 
