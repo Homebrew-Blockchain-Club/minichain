@@ -1,48 +1,64 @@
 package testing
 
 import (
+	"testing"
+
 	"github.com/Homebrew-Blockchain-Club/minichain/ds"
 	"github.com/Homebrew-Blockchain-Club/minichain/entity"
 	"github.com/Homebrew-Blockchain-Club/minichain/exec"
-	"testing"
+	"github.com/Homebrew-Blockchain-Club/minichain/typeconv"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func TestMiningNewBlock(t *testing.T) {
+	privatekey1, _ := crypto.GenerateKey()
+	privatekey2, _ := crypto.GenerateKey()
+
+	//ret["PrivateKey"] = base64.StdEncoding.EncodeToString(crypto.FromECDSA(privatekey))
+	//ret["PublicKey"] = base64.StdEncoding.EncodeToString(crypto.CompressPubkey(&privatekey.PublicKey))
+	addr1 := crypto.PubkeyToAddress(privatekey1.PublicKey).Bytes()
+	addr2 := crypto.PubkeyToAddress(privatekey2.PublicKey).Bytes()
+	mpt := ds.NewMPT()
+	mpt.Update(typeconv.ToHex(addr1), typeconv.ToBytes(entity.Account{
+		Balance: 1000,
+	}))
+	mptHash := mpt.Commit()
+	ds.SetTop(&ds.Block{
+		Header: ds.BlockHeader{
+			StateRoot: mptHash,
+		},
+	})
 	txs := []entity.Transaction{
 		{
 			Nonce:    1,
 			Gas:      1000,
 			GasLimit: 2000,
-			From:     []byte("sender1"),
-			To:       []byte("receiver1"),
+			From:     addr1,
+			To:       addr2,
 			Amount:   100,
 			Data:     []byte("transaction data"),
-			R:        []byte("R_value"),
-			S:        []byte("S_value"),
-			V:        []byte("V_value"),
 		},
 		{
 			Nonce:    2,
 			Gas:      1500,
 			GasLimit: 2500,
-			From:     []byte("sender2"),
-			To:       []byte("receiver2"),
+			From:     addr2,
+			To:       addr1,
 			Amount:   200,
 			Data:     []byte("another transaction"),
-			R:        []byte("R_value"),
-			S:        []byte("S_value"),
-			V:        []byte("V_value"),
 		},
 	}
-
+	entity.Sign(&txs[0], crypto.FromECDSA(privatekey1))
+	entity.Sign(&txs[1], crypto.FromECDSA(privatekey2))
 	// 执行挖矿操作
 	newBlock := exec.MiningNewBlock(txs)
-
+	if !exec.ExamineNewBlock(&newBlock) {
+		t.Errorf("examine failed")
+	}
 	// 检查挖矿结果是否符合预期
 	if len(newBlock.Transactions) != len(txs) {
 		t.Errorf("Expected %d transactions in new block, got %d", len(txs), len(newBlock.Transactions))
 	}
-
 	// TODO: 可以添加更多的测试检查点，如验证新区块的哈希、交易树、收据树和状态树等的有效性。
 }
 

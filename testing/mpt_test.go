@@ -20,7 +20,7 @@ func TestMPT(t *testing.T) {
 			StateRoot: Byte,
 		},
 	}
-	tr = ds.NewStateMPT(bl)
+	tr = ds.NewMPTFromPrevious(bl.Header.StateRoot)
 	tr.Update([]byte{8, 1, 0}, []byte("丁真电子烟"))
 
 }
