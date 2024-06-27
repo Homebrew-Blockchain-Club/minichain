@@ -74,7 +74,7 @@ func TestDefaultTxPool(t *testing.T) {
 	tx10 := entity.Transaction{From: typeconv.ToHex(address1.Bytes()), Nonce: 8, Gas: 20}
 
 	// 测试queue取交易
-	tx11 := entity.Transaction{From: typeconv.ToHex(address2.Bytes()), Nonce: 1, Gas: 21}
+	tx11 := entity.Transaction{From: typeconv.ToHex(address2.Bytes()), Nonce: 1, Gas: 41}
 	tx12 := entity.Transaction{From: typeconv.ToHex(address2.Bytes()), Nonce: 4, Gas: 21}
 
 	pool.Insert(tx6)
@@ -94,10 +94,10 @@ func TestDefaultTxPool(t *testing.T) {
 	println("isFull:(期待结果true)", pool.IsFull())
 
 	// 为方便演示， 个位数gas为1的为address2
-	println("测试取完交易：\n当前交易池交易数量为", pool.Length())
+	println("测试取完交易(为方便演示， 个位数gas为1的为address2)：\n当前交易池交易数量为", pool.Length())
 	for pool.Length() != 0 {
 		tx := pool.Poll()
-		println(tx.Nonce, tx.Gas, "len->", pool.Length())
+		println("nonce:", tx.Nonce, "gas:", tx.Gas, "len->", pool.Length())
 	}
 
 }

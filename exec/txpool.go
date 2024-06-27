@@ -29,12 +29,10 @@ func (td TxsBlks) Len() int {
 	return len(td)
 }
 func (td TxsBlks) Less(i, j int) bool {
-	f := true
 	if td[i].address == td[j].address {
-		f = td[i].Txs[len(td[i].Txs)-1].Nonce < td[j].Txs[0].Nonce
+		return td[i].Txs[len(td[i].Txs)-1].Nonce < td[j].Txs[0].Nonce
 	}
-	return td[i].GasPrice > td[j].GasPrice && f
-
+	return td[i].GasPrice > td[j].GasPrice
 }
 func (td TxsBlks) Swap(i, j int) {
 	td[i], td[j] = td[j], td[i]
@@ -144,6 +142,7 @@ func (pool *DefualtTxPool) AllSortedByGas() {
 		allBlk = append(allBlk, rowBlk...)
 	}
 	// Sorted by gas
+	sort.Sort(allBlk)
 	sort.Sort(allBlk)
 
 	allTx := make(Txs, 0)
