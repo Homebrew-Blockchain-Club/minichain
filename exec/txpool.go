@@ -30,7 +30,7 @@ func (td TxsBlks) Len() int {
 }
 func (td TxsBlks) Less(i, j int) bool {
 	if td[i].address == td[j].address {
-		return td[i].Txs[len(td[i].Txs)-1].Nonce < td[j].Txs[0].Nonce
+		return td[i].Txs[0].Nonce < td[j].Txs[0].Nonce
 	}
 	return td[i].GasPrice > td[j].GasPrice
 }
@@ -128,7 +128,10 @@ func (pool *DefualtTxPool) Poll() entity.Transaction {
 	pool.DeleteFromPending(tx)
 
 	// Update the miniPool
-	pool.AllSortedByGas()
+	pool.MiniPool = pool.MiniPool[1:]
+	if len(pool.MiniPool) == 0 {
+		pool.AllSortedByGas()
+	}
 	return tx
 }
 
@@ -142,7 +145,6 @@ func (pool *DefualtTxPool) AllSortedByGas() {
 		allBlk = append(allBlk, rowBlk...)
 	}
 	// Sorted by gas
-	sort.Sort(allBlk)
 	sort.Sort(allBlk)
 
 	allTx := make(Txs, 0)
